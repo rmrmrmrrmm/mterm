@@ -23,10 +23,12 @@ public slots:
 private:
     Ui::MainWindow *ui;
     pterm::PseudoTerm *term;
+    static bool isUnHandleKeysPressed(int key);
 
 protected:
     void keyPressEvent(QKeyEvent* event);
-    void keyReleaserEvent(QKeyEvent* event);
+    void keyPressEvent(int key);
+    bool eventFilter(QObject* obj, QEvent* event);
 
 };
 

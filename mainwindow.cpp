@@ -6,9 +6,8 @@ MainWindow::MainWindow(QWidget *parent)
     , ui(new Ui::MainWindow)
 {
     term = new pterm::PseudoTerm();
-
     ui->setupUi(this);
-    installEventFilter(this);
+    ui->label->installEventFilter(this);
     //connect(ui->pushButton, SIGNAL(clicked()), this, SLOT(onTextChanged()));
     //connect(ui->textEdit, SIGNAL(textChanged(QString)), ui->label, SLOT(setText(QString)));
     //ui->textEdit->append("a");
@@ -26,6 +25,32 @@ void MainWindow::onTextChanged(){
 }
 
 void MainWindow::keyPressEvent(QKeyEvent* event){
-    term->keyPressed(event->key());
+    this->keyPressEvent(event->key());
 }
 
+void MainWindow::keyPressEvent(int key){
+    term->keyPressed(key);
+}
+
+bool MainWindow::eventFilter(QObject *object, QEvent *event)
+{
+    //if (object == ui->textEdit && event->type() == QEvent::KeyPress) {
+    if (event->type() == QEvent::KeyPress) {
+        QKeyEvent *keyEvent = static_cast<QKeyEvent *>(event);
+        int key = keyEvent->key();
+        if (MainWindow::isUnHandleKeysPressed(key)) {
+            this->keyPressEvent(key);
+            return true;
+        } else
+            return false;
+    }
+    return false;
+}
+
+//textBrowserだとSpaceとかがMainWindowに到達してこなかったから作った
+//labelに変えたので不要かもしれない
+bool MainWindow::isUnHandleKeysPressed(int key){
+    //if(key == Qt::Key_Space || (Qt::Key_Home <= key && key <= Qt::Key_PageDown))
+    //return true;
+    return false;
+}

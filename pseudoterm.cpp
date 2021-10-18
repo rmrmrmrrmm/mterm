@@ -1,10 +1,9 @@
 #include "pseudoterm.h"
 
-#include "unistd.h"
+#include "fcntl.h"
 #include "pty.h"
 #include "utmp.h"
 #include "stdlib.h"
-#include "signal.h"
 #include "keyutil.h"
 
 #include "iostream"
@@ -19,30 +18,27 @@ PseudoTerm::PseudoTerm()
 PseudoTerm::~PseudoTerm()
 {
     close(amaster);
-    if(childp!=0)::kill(childp, SIGTERM);;
+    delete(childp);
 }
 
 void PseudoTerm::keyPressed(int keycode){
-    std::string s = KeyUtil::translateKey(keycode);
-    //::write(amaster, s.c_str(), s.length());
+    char buf = KeyUtil::translateKey(keycode);
+    if(buf != -1)
+    ::write(amaster, &buf, 1);
 }
 
 int PseudoTerm::forkPty(){
-    int nread;
-    char buf[256];
     int pip[2];
-    std::string str;
 
     if(::openpty(&amaster, &aslave, nullptr, NULL, nullptr) < 0){
               exit(1);
     }
 
-    switch(childp = ::fork()){
+    switch(::fork()){
         case -1:
             ::exit(1);
 
         case 0:
-            //child
             close(amaster);
             if(login_tty(aslave) < 0) {
                 ::exit(1);
@@ -51,62 +47,49 @@ int PseudoTerm::forkPty(){
             ::exit(0);
     }
 
-    //parent
-    close(aslave);
+    ::close(aslave);
 
     if(::pipe(pip)== -1){
         exit(-1);
     }
 
-    switch(childp = ::fork()){
+    switch((childp = childptr::getInst(childp, ::fork()))->getPid()){
         case -1:
             exit(-1);
         case 0:
+            int nread;
+            char buf[256];
             ::close(pip[0]);
             for(;;){
-                if ((nread = ::read(amaster, buf, 256)) <= 0) break;
-                if (::write(pip[1], buf, nread) != nread) break;
+                if ((nread = ::read(amaster, buf, 255)) <= 0) break;
+                buf[nread] = 0;
+                if (::write(pip[1], buf, nread + 1) != nread + 1) break;
             }
+            ::close(pip[1]);
+            ::close(amaster);
             ::exit(0);
     }
 
     ::close(pip[1]);
 
-    /*
-    //0x08 BS 0x0d CR
-    str = "ls /usr/bin | more";
-    ::write(amaster, str.c_str(), str.length());
-    str = 0x0d;
-    ::write(amaster, str.c_str(), str.length());
-    sleep(1);
-    str = "q";
-    //str+= 0x0d;
-    ::write(amaster, str.c_str(), str.length());
 
-    sleep(1);
-    str = "ls /usr/bin | more";
-    ::write(amaster, str.c_str(), str.length());
-    str = 0x0d;
-    ::write(amaster, str.c_str(), str.length());
-    sleep(1);
-    str = "q";
-    //str+= 0x0d;
-    ::write(amaster, str.c_str(), str.length());
-    //str = 0x0d;
-    //::write(amaster, str.c_str(), str.length());
-    str = "";
 
-    sleep(3);
-    for(int i = 0; i < 3; i++){
-        ::read(pip[0], buf, 256);
-        str.assign(buf);
-        std::cout << str << std::endl;
-        str = "";
-        sleep(1);
+    switch((childp = childptr::getInst(childp, ::fork()))->getPid()){
+        case -1:
+            exit(-1);
+        case 0:
+            char buf[256];
+            for(;;){
+                ::read(pip[0], buf, 256);
+               std::cout << buf << std::ends << std::flush;
+            }
+            ::close(pip[0]);
+            ::close(amaster);
+            ::exit(0);
     }
-*/
+    ::close(pip[0]);
 
-    return childp;
+    return 0;
 }
 
 }

@@ -3,6 +3,8 @@
 
 #include <string>
 #include <sstream>
+#include "unistd.h"
+#include "signal.h"
 
 namespace pterm{
 
@@ -15,13 +17,32 @@ namespace pterm{
             void keyReleased(int keycode);
 
         private:
+            class childptr{
+                private:
+                childptr *prev;
+                int pid;
+
+                childptr(childptr *ptr, int pid){
+                    prev = ptr;
+                    this->pid = pid;
+                };
+                public:
+                ~childptr(){
+                    if(prev!=nullptr)
+                        delete prev;
+                    ::kill(pid, SIGTERM);
+                };
+                static childptr* getInst(childptr*ptr, int pid){
+                    return new childptr(ptr, pid);
+                }
+                int getPid(){
+                    return pid;
+                }
+            };
             int amaster;
             int aslave;
-            int childp;
+            childptr *childp = nullptr;
             int forkPty();
-
-            std::stringstream is, os;
-
     };
 
 }
