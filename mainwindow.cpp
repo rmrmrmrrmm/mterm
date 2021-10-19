@@ -1,5 +1,6 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
+#include "keyutil.h"
 #include <iostream>
 #include <QTimer>
 #include <sys/fcntl.h>
@@ -12,6 +13,7 @@ MainWindow::MainWindow(QWidget *parent)
     this->setAttribute(Qt::WA_TranslucentBackground, true);
     ui->setupUi(this);
     ui->label->installEventFilter(this);
+    ui->scrollArea->installEventFilter(this);
     str = "";
     QTimer *timer = new QTimer(this);
     connect(timer, &QTimer::timeout, this, QOverload<>::of(&MainWindow::timer));
@@ -47,19 +49,43 @@ void MainWindow::timer(){
 }
 
 void MainWindow::keyPressEvent(QKeyEvent* event){
-    this->keyPressEvent(event->key());
+    int key = event->key();
+    if(QApplication::queryKeyboardModifiers() & Qt::ControlModifier){
+        if(key >= 64 && key <= 95){
+            this->keyPressEvent(key - 64);
+            return;
+        } else if(key == 63){
+            //DEL ^?
+            this->keyPressEvent(127);
+            return;
+        }
+    }
+    if(QApplication::queryKeyboardModifiers() & Qt::ShiftModifier)
+        if(key >= 64 && key <= 90){
+            this->keyPressEvent(key);
+            return;
+        }
+    if(key >= 64 && key <= 90){
+        this->keyPressEvent(::tolower(key));
+        return;
+    }
+
+    //default
+    this->keyPressEvent(key);
+    return;
 }
 
 void MainWindow::keyPressEvent(int key){
+    std::cout << "  pressed:" << key << std::endl;
     term->keyPressed(key);
 }
 
 bool MainWindow::eventFilter(QObject *object, QEvent *event)
 {
-    if (object == ui->label && event->type() == QEvent::KeyPress) {
+    if (object == ui->scrollArea && event->type() == QEvent::KeyPress) {
         QKeyEvent *keyEvent = static_cast<QKeyEvent *>(event);
         int key = keyEvent->key();
-        if (MainWindow::isUnHandleKeysPressed(key)) {
+        if (pterm::KeyUtil::isRegistered(key)) {
             this->keyPressEvent(key);
             return true;
         } else
@@ -68,10 +94,4 @@ bool MainWindow::eventFilter(QObject *object, QEvent *event)
     return false;
 }
 
-//textBrowserだとSpaceとかがMainWindowに到達してこなかったから作った
-//labelに変えたので不要かもしれない
-bool MainWindow::isUnHandleKeysPressed(int key){
-    //if(key == Qt::Key_Space || (Qt::Key_Home <= key && key <= Qt::Key_PageDown))
-    //return true;
-    return false;
-}
+
