@@ -16,8 +16,17 @@ namespace pterm{
 
             void keyPressed(int keycode);
             void keyReleased(int keycode);
+            void initPipe();
+            int getPipe();
 
         private:
+            int amaster;
+            int aslave;
+            int pip = -1;
+            const std::string FIFONAME = "/tmp/" + std::to_string(getpid());
+
+            int forkPty();
+
             class childptr{
                 private:
                 childptr *prev;
@@ -40,11 +49,7 @@ namespace pterm{
                     return pid;
                 }
             };
-            int amaster;
-            int aslave;
-            int pip;
             childptr *childp = nullptr;
-            int forkPty();
     };
 
 }

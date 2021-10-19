@@ -9,30 +9,27 @@ MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
 {
-    if((pip=open("/tmp/FifoTest",O_RDONLY | O_NONBLOCK))==-1){
-         perror("open");
-         exit(-1);
-    }
-
+    this->setAttribute(Qt::WA_TranslucentBackground, true);
+    ui->setupUi(this);
+    ui->label->installEventFilter(this);
+    str = "";
     QTimer *timer = new QTimer(this);
     connect(timer, &QTimer::timeout, this, QOverload<>::of(&MainWindow::timer));
     timer->start(32);
-    ui->setupUi(this);
-    ui->label->installEventFilter(this);
-    //connect(term, SIGNAL(bufferReaded(char*)), this, SLOT(onTextChanged(char*)));
-    //connect(ui->textEdit, SIGNAL(textChanged(QString)), ui->label, SLOT(setText(QString)));
-    str = "";
 }
 
 MainWindow::~MainWindow()
 {
-    ::close(pip);
     delete term;
     delete ui;
 }
 
 void MainWindow::setTerm(pterm::PseudoTerm *pterm){
     term = pterm;
+    if((pip=term->getPipe())==-1){
+        perror("open");
+        exit(1);
+   }
 }
 
 void MainWindow::timer(){

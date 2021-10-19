@@ -13,15 +13,14 @@ namespace pterm{
 
 PseudoTerm::PseudoTerm()
 {
-    if(::mkfifo("/tmp/FifoTest",0666)==-1){
-        perror("mkfifo");
-    }
+    initPipe();
     forkPty();
 }
 
 PseudoTerm::~PseudoTerm()
 {
-    ::remove("/tmp/FifoTest");
+    close(pip);
+    ::remove(FIFONAME.c_str());
     close(amaster);
     delete(childp);
 }
@@ -30,6 +29,20 @@ void PseudoTerm::keyPressed(int keycode){
     char buf = KeyUtil::translateKey(keycode);
     if(buf != -1)
     ::write(amaster, &buf, 1);
+}
+
+void PseudoTerm::initPipe(){
+    if(::mkfifo(FIFONAME.c_str(),0666)==-1){
+        perror("mkfifo");
+    }
+    if((pip=open(FIFONAME.c_str(), O_RDWR  | O_NONBLOCK))==-1){
+        perror(("open" + FIFONAME).c_str());
+        exit(1);
+    }
+}
+
+int PseudoTerm::getPipe(){
+    return pip;
 }
 
 int PseudoTerm::forkPty(){
@@ -48,10 +61,11 @@ int PseudoTerm::forkPty(){
                 ::exit(1);
             }
             ::execlp("bash", "");
-            ::exit(0);
+            ::exit(1);
     }
 
     ::close(aslave);
+
 
     switch((childp = childptr::getInst(childp, ::fork()))->getPid()){
         case -1:
@@ -59,21 +73,15 @@ int PseudoTerm::forkPty(){
         case 0:
             int nread;
             char buf[256];
-            if((pip=open("/tmp/FifoTest", O_RDWR  | O_NONBLOCK))==-1){
-                perror("open");
-                    exit(-1);
-            }
             for(;;){
                 if ((nread = ::read(amaster, buf, 127)) <= 0){
                     break;
                 }
                 buf[nread] = 0;
-                ::write(pip, &nread, 1);
-                ::write(pip, buf, nread + 1);
+                ::write(getPipe(), &nread, 1);
+                ::write(getPipe(), buf, nread + 1);
             }
             std::cout << "exit: " << nread << std::endl;
-            ::close(pip);
-            ::close(amaster);
             ::exit(0);
     }
 
