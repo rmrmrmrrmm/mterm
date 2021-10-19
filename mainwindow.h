@@ -17,13 +17,17 @@ public:
     MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
 
+    void setTerm(pterm::PseudoTerm*);
+
 public slots:
-    void onTextChanged();
+    void timer();
 
 private:
     Ui::MainWindow *ui;
     pterm::PseudoTerm *term;
     static bool isUnHandleKeysPressed(int key);
+    int pip;
+    std::string str;
 
 protected:
     void keyPressEvent(QKeyEvent* event);

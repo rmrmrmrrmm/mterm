@@ -5,6 +5,7 @@
 #include "utmp.h"
 #include "stdlib.h"
 #include "keyutil.h"
+#include <sys/stat.h>
 
 #include "iostream"
 
@@ -12,11 +13,15 @@ namespace pterm{
 
 PseudoTerm::PseudoTerm()
 {
+    if(::mkfifo("/tmp/FifoTest",0666)==-1){
+        perror("mkfifo");
+    }
     forkPty();
 }
 
 PseudoTerm::~PseudoTerm()
 {
+    ::remove("/tmp/FifoTest");
     close(amaster);
     delete(childp);
 }
@@ -28,7 +33,6 @@ void PseudoTerm::keyPressed(int keycode){
 }
 
 int PseudoTerm::forkPty(){
-    int pip[2];
 
     if(::openpty(&amaster, &aslave, nullptr, NULL, nullptr) < 0){
               exit(1);
@@ -49,45 +53,29 @@ int PseudoTerm::forkPty(){
 
     ::close(aslave);
 
-    if(::pipe(pip)== -1){
-        exit(-1);
-    }
-
     switch((childp = childptr::getInst(childp, ::fork()))->getPid()){
         case -1:
             exit(-1);
         case 0:
             int nread;
             char buf[256];
-            ::close(pip[0]);
+            if((pip=open("/tmp/FifoTest", O_RDWR  | O_NONBLOCK))==-1){
+                perror("open");
+                    exit(-1);
+            }
             for(;;){
-                if ((nread = ::read(amaster, buf, 255)) <= 0) break;
+                if ((nread = ::read(amaster, buf, 127)) <= 0){
+                    break;
+                }
                 buf[nread] = 0;
-                if (::write(pip[1], buf, nread + 1) != nread + 1) break;
+                ::write(pip, &nread, 1);
+                ::write(pip, buf, nread + 1);
             }
-            ::close(pip[1]);
+            std::cout << "exit: " << nread << std::endl;
+            ::close(pip);
             ::close(amaster);
             ::exit(0);
     }
-
-    ::close(pip[1]);
-
-
-
-    switch((childp = childptr::getInst(childp, ::fork()))->getPid()){
-        case -1:
-            exit(-1);
-        case 0:
-            char buf[256];
-            for(;;){
-                ::read(pip[0], buf, 256);
-               std::cout << buf << std::ends << std::flush;
-            }
-            ::close(pip[0]);
-            ::close(amaster);
-            ::exit(0);
-    }
-    ::close(pip[0]);
 
     return 0;
 }

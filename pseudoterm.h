@@ -8,7 +8,8 @@
 
 namespace pterm{
 
-    class PseudoTerm{
+    class PseudoTerm {
+
         public:
             PseudoTerm();
             ~PseudoTerm();
@@ -41,6 +42,7 @@ namespace pterm{
             };
             int amaster;
             int aslave;
+            int pip;
             childptr *childp = nullptr;
             int forkPty();
     };
