@@ -30,6 +30,7 @@ MainWindow::~MainWindow()
 
 void MainWindow::setTerm(pterm::PseudoTerm *pterm){
     term = pterm;
+    this->setWindowTitle(term->getTname());
     if((pip=term->getPipe())==-1){
         perror("open");
         exit(1);

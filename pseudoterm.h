@@ -21,6 +21,7 @@ namespace pterm{
             void initPipe();
             int getPipe();
             bool isPipeExists();
+            char *getTname();
 
         private:
             int amaster;

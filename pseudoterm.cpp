@@ -53,6 +53,10 @@ bool PseudoTerm::isPipeExists(){
     return stat(FIFONAME.c_str(), &st) == 0;
 }
 
+char *PseudoTerm::getTname(){
+    return tname;
+}
+
 int PseudoTerm::forkPty(){
 
     if(::openpty(&amaster, &aslave, tname, nullptr, nullptr) < 0){
