@@ -136,23 +136,33 @@ void MainWindow::keyPressEvent(QKeyEvent* event){
         return;
     }
 
-
     if(key == Qt::Key_Left){
         this->keyPressEvent(0x02);
-        /*
-        this->keyPressEvent(0x1B);
-        this->keyPressEvent('[');
-        this->keyPressEvent('2');
-        this->keyPressEvent('D');
-        */
+        return;
+    }
+
+    if(key == Qt::Key_Right){
+        this->keyPressEvent(0x06);
         return;
     }
 
     if(key == Qt::Key_Up){
-        this->keyPressEvent(0x1B);
-        this->keyPressEvent('[');
-        this->keyPressEvent('2');
-        this->keyPressEvent('A');
+        this->keyPressEvent(0x10);
+        return;
+    }
+
+    if(key == Qt::Key_Down){
+        this->keyPressEvent(0x0E);
+        return;
+    }
+
+    if(key == Qt::Key_Home){
+        this->keyPressEvent(0x01);
+        return;
+    }
+
+    if(key == Qt::Key_End){
+        this->keyPressEvent(0x05);
         return;
     }
 
