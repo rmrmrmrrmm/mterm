@@ -3,6 +3,8 @@
 
 #include <string>
 #include <sstream>
+#include <termios.h>
+#include <sys/ioctl.h>
 #include "unistd.h"
 #include "signal.h"
 
@@ -23,6 +25,10 @@ namespace pterm{
             int amaster;
             int aslave;
             int pip = -1;
+
+            char *tname;
+            struct ::termios term;
+            struct ::winsize tws;
             const std::string FIFONAME = "/tmp/" + std::to_string(getpid());
 
             int forkPty();
@@ -50,6 +56,11 @@ namespace pterm{
                 }
             };
             childptr *childp = nullptr;
+
+            typedef union{
+                int keycode;
+                unsigned char char_4[4];
+            } _Char;
     };
 
 }

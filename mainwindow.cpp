@@ -12,9 +12,11 @@ MainWindow::MainWindow(QWidget *parent)
 {
     this->setAttribute(Qt::WA_TranslucentBackground, true);
     ui->setupUi(this);
+    ui->centralwidget->installEventFilter(this);
     ui->label->installEventFilter(this);
     ui->scrollArea->installEventFilter(this);
-    str = "";
+    ui->scrollAreaWidgetContents->installEventFilter(this);
+    str = log = "";
     QTimer *timer = new QTimer(this);
     connect(timer, &QTimer::timeout, this, QOverload<>::of(&MainWindow::timer));
     timer->start(32);
@@ -42,54 +44,156 @@ void MainWindow::timer(){
         if((nread = ::read(pip, buf, header)) != header)
             exit(-1);
         buf[nread] = 0;
-        str.append(buf);
-        std::cout << nread << std::endl;
+        log.append(buf);
+        for(int i = 0; i < nread; i++){
+            switch(char c = buf[i]) {
+            case 0x07:
+                //ring a bell
+                continue;
+            case 0x08:
+                //BS
+                if(i+2 < nread && buf[i+1] == 0x20 && buf[i+2] == 0x08){
+                    str.erase(str.length() - 1 + offset, 1);
+                    i+=2;
+                } else{
+                    offset -= 1;
+                }
+                continue;
+            case 0x0a:
+                //LF
+                row++;
+                col = offset =0;
+                str += c;
+                continue;
+            case 0x0d:
+                //CR
+                offset = -col;
+                continue;
+            default:
+                if(offset < 0){
+                    str.replace(str.length() + offset, 1, 1, c);
+                    offset++;
+                } else{
+                    str += c;
+                    col++;
+                }
+                continue;
+            }
+        }
     }
     ui->label->setText(str.c_str());
 }
 
 void MainWindow::keyPressEvent(QKeyEvent* event){
     int key = event->key();
+    std::cout << "  press:" << key << std::endl;
+
     if(QApplication::queryKeyboardModifiers() & Qt::ControlModifier){
-        if(key >= 64 && key <= 95){
-            this->keyPressEvent(key - 64);
+        if(key >= Qt::Key_At && key <= Qt::Key_Underscore){
+            this->keyPressEvent(key - Qt::Key_At);
             return;
-        } else if(key == 63){
-            //DEL ^?
+        } else if(key == Qt::Key_Question){
             this->keyPressEvent(127);
             return;
         }
     }
-    if(QApplication::queryKeyboardModifiers() & Qt::ShiftModifier)
-        if(key >= 64 && key <= 90){
+
+    if(QApplication::queryKeyboardModifiers() & Qt::ShiftModifier){
+        if(key >= Qt::Key_A && key <= Qt::Key_Z){
             this->keyPressEvent(key);
             return;
         }
-    if(key >= 64 && key <= 90){
+        if(key == Qt::Key_At){
+            this->keyPressEvent(0x60);
+            return;
+        }
+    }
+
+    if(key >= Qt::Key_A && key <= Qt::Key_Z){
         this->keyPressEvent(::tolower(key));
         return;
     }
 
-    //default
+    if(key == Qt::Key_At){
+        this->keyPressEvent(key);
+        return;
+    }
+    if(key == Qt::Key_Space){
+        this->keyPressEvent(0x20);
+        return;
+    }
+
+    if(key == Qt::Key_Backspace){
+        this->keyPressEvent(0x08);
+        return;
+    }
+    if(key == Qt::Key_Return){
+        this->keyPressEvent(0x0d);
+        return;
+    }
+    if(key == Qt::Key_Escape){
+        this->keyPressEvent(0x1B);
+        return;
+    }
+
+
+    if(key == Qt::Key_Left){
+        this->keyPressEvent(0x02);
+        /*
+        this->keyPressEvent(0x1B);
+        this->keyPressEvent('[');
+        this->keyPressEvent('2');
+        this->keyPressEvent('D');
+        */
+        return;
+    }
+
+    if(key == Qt::Key_Up){
+        this->keyPressEvent(0x1B);
+        this->keyPressEvent('[');
+        this->keyPressEvent('2');
+        this->keyPressEvent('A');
+        return;
+    }
+
+    if(key == Qt::Key_Control){
+        return;
+    }
+
+    if(key == Qt::Key_Alt){
+        return;
+    }
+
+    if(key == Qt::Key_Shift){
+        return;
+    }
+
+    if(key == Qt::Key_Zenkaku_Hankaku){
+        return;
+    }
+
+    //others
     this->keyPressEvent(key);
     return;
 }
 
 void MainWindow::keyPressEvent(int key){
-    std::cout << "  pressed:" << key << std::endl;
+    std::cout << "  resolve:" << key << std::endl;
     term->keyPressed(key);
 }
 
 bool MainWindow::eventFilter(QObject *object, QEvent *event)
 {
-    if (object == ui->scrollArea && event->type() == QEvent::KeyPress) {
+    //if (object == ui->scrollArea && event->type() == QEvent::KeyPress) {
+    if (event->type() == QEvent::KeyPress) {
         QKeyEvent *keyEvent = static_cast<QKeyEvent *>(event);
         int key = keyEvent->key();
-        if (pterm::KeyUtil::isRegistered(key)) {
-            this->keyPressEvent(key);
-            return true;
-        } else
+        if (key == Qt::Key_Zenkaku_Hankaku) {
             return false;
+        } else{
+            this->keyPressEvent(keyEvent);
+            return true;
+        }
     }
     return false;
 }

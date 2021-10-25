@@ -27,7 +27,8 @@ private:
     pterm::PseudoTerm *term;
     static bool isUnHandleKeysPressed(int key);
     int pip;
-    std::string str;
+    std::string str, log;
+    int offset = 0, row = 0, col = 0;
 
 protected:
     void keyPressEvent(QKeyEvent* event);

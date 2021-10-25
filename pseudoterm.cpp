@@ -4,8 +4,8 @@
 #include "pty.h"
 #include "utmp.h"
 #include "stdlib.h"
-#include "keyutil.h"
 #include <sys/stat.h>
+#include <math.h>
 
 #include "iostream"
 
@@ -21,14 +21,19 @@ PseudoTerm::~PseudoTerm()
 {
     close(pip);
     ::remove(FIFONAME.c_str());
-    close(amaster);
     delete(childp);
 }
 
 void PseudoTerm::keyPressed(int keycode){
-    char buf = KeyUtil::translateKey(keycode);
-    if(buf != -1)
-    ::write(amaster, &buf, 1);
+    _Char buf;
+    buf.keycode = keycode;
+    for(int i = 4; i >= 2; i--){
+        if(buf.keycode >= std::pow(256, i - 1)){
+            ::write(amaster, buf.char_4, i);
+            return;
+        }
+    }
+    ::write(amaster, buf.char_4, 1);
 }
 
 void PseudoTerm::initPipe(){
@@ -47,8 +52,11 @@ int PseudoTerm::getPipe(){
 
 int PseudoTerm::forkPty(){
 
-    if(::openpty(&amaster, &aslave, nullptr, NULL, nullptr) < 0){
-              exit(1);
+
+
+    if(::openpty(&amaster, &aslave, tname, nullptr, nullptr) < 0){
+        perror("openpty");
+        exit(EXIT_FAILURE);
     }
 
     switch(::fork()){
@@ -60,8 +68,9 @@ int PseudoTerm::forkPty(){
             if(login_tty(aslave) < 0) {
                 ::exit(1);
             }
-            ::execlp("bash", "");
-            ::exit(1);
+
+            ::execlp("bash", "", nullptr);
+            ::exit(0);
     }
 
     ::close(aslave);
@@ -69,10 +78,11 @@ int PseudoTerm::forkPty(){
 
     switch((childp = childptr::getInst(childp, ::fork()))->getPid()){
         case -1:
-            exit(-1);
+            ::perror("forkMaster");
+            exit(1);
         case 0:
             int nread;
-            char buf[256];
+            char buf[128];
             for(;;){
                 if ((nread = ::read(amaster, buf, 127)) <= 0){
                     break;

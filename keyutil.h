@@ -12,7 +12,7 @@ namespace pterm{
 class KeyUtil
 {
 public:
-    static char translateKey(int QtKeyCode){
+    static int translateKey(int QtKeyCode){
 
         if(QtKeyCode >= 0 && QtKeyCode <= 26){
             return QtKeyCode;
@@ -28,8 +28,8 @@ public:
         if(QtKeyCode == Qt::Key_Return){
             return 0x0d;
         }
-        if(QtKeyCode == Qt::Key_Backspace){
-            return 0x08;
+        if(QtKeyCode == Qt::Key_Escape){
+            return 0x1B;
         }
         if(QtKeyCode == Qt::Key_Return){
             return 0x0d;
@@ -37,10 +37,11 @@ public:
 
         //std::string str = std::to_string(QtKeyCode);
         //std::cout << "pressed:" << str << std::endl;
-        return -1;
+        perror("error at translating QtKeyCode");
+        return 0;
     }
 
-    //widgetのデフォルトで処理されてしまうキーたち
+    //widgetに処理されてしまうキーたち
     static bool isRegistered(int key){
         if(Qt::Key_Home <= key && key <= Qt::Key_PageDown)
             return true;
