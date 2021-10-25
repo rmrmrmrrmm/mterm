@@ -40,9 +40,12 @@ void MainWindow::timer(){
     char buf[128];
     int nread;
     char header;
+    if(!term->isPipeExists()){
+        exit(0);
+    }
     while((::read(pip, &header, 1)) > 0){
         if((nread = ::read(pip, buf, header)) != header)
-            exit(-1);
+            exit(1);
         buf[nread] = 0;
         log.append(buf);
         for(int i = 0; i < nread; i++){
@@ -80,8 +83,8 @@ void MainWindow::timer(){
                 continue;
             }
         }
+        ui->label->setText(str.c_str());
     }
-    ui->label->setText(str.c_str());
 }
 
 void MainWindow::keyPressEvent(QKeyEvent* event){
@@ -127,10 +130,16 @@ void MainWindow::keyPressEvent(QKeyEvent* event){
         this->keyPressEvent(0x08);
         return;
     }
+
+    if(key == Qt::Key_Delete){
+        this->keyPressEvent(0x04);
+    }
+
     if(key == Qt::Key_Return){
         this->keyPressEvent(0x0d);
         return;
     }
+
     if(key == Qt::Key_Escape){
         this->keyPressEvent(0x1B);
         return;

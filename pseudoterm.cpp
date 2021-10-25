@@ -19,8 +19,6 @@ PseudoTerm::PseudoTerm()
 
 PseudoTerm::~PseudoTerm()
 {
-    close(pip);
-    ::remove(FIFONAME.c_str());
     delete(childp);
 }
 
@@ -50,9 +48,12 @@ int PseudoTerm::getPipe(){
     return pip;
 }
 
+bool PseudoTerm::isPipeExists(){
+    struct stat st;
+    return stat(FIFONAME.c_str(), &st) == 0;
+}
+
 int PseudoTerm::forkPty(){
-
-
 
     if(::openpty(&amaster, &aslave, tname, nullptr, nullptr) < 0){
         perror("openpty");
@@ -75,7 +76,6 @@ int PseudoTerm::forkPty(){
 
     ::close(aslave);
 
-
     switch((childp = childptr::getInst(childp, ::fork()))->getPid()){
         case -1:
             ::perror("forkMaster");
@@ -91,7 +91,7 @@ int PseudoTerm::forkPty(){
                 ::write(getPipe(), &nread, 1);
                 ::write(getPipe(), buf, nread + 1);
             }
-            std::cout << "exit: " << nread << std::endl;
+            ::remove(FIFONAME.c_str());
             ::exit(0);
     }
 

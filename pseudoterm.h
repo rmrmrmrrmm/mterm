@@ -20,6 +20,7 @@ namespace pterm{
             void keyReleased(int keycode);
             void initPipe();
             int getPipe();
+            bool isPipeExists();
 
         private:
             int amaster;
