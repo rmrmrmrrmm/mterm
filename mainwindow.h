@@ -27,7 +27,7 @@ private:
     pterm::PseudoTerm *term;
     int pip;
     std::basic_string<uchar> log;
-    std::string str;//多分0x80以降が紛れ込むことはないので、ucharじゃなくても大丈夫......?
+    std::string str;
     int offset = 0, row = 0, col = 0;
 
     void parseEscapeSequence(std::basic_string<uchar> input, unsigned long *index);

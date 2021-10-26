@@ -78,7 +78,7 @@ void MainWindow::timer(){
                 offset = -col;
                 continue;
             case 0x1b:
-                //ESC//まだ
+                //ESC
                 parseEscapeSequence(buf, &i);
                 continue;
             default:
@@ -195,7 +195,7 @@ void MainWindow::parseEscapeSequence(std::basic_string<uchar> input, unsigned lo
             case 'm':
                 //Select Graphic Rendition
                 //色設定
-                //本当はセミコロン挟んで複数指定できるらしい......
+                //セミコロンが使用できるという説も見つけたものの、とりあえず放置
                 return;
             case ';':
                 if(*i + 1 > input.length()){
@@ -222,7 +222,7 @@ void MainWindow::parseEscapeSequence(std::basic_string<uchar> input, unsigned lo
                     case 'H':
                         //Cursor Position
                         return;
-                    case 'm':
+                    case 'f':
                         //Horizontal Vertical Position
                         return;
                     default:
