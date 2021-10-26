@@ -25,14 +25,16 @@ public slots:
 private:
     Ui::MainWindow *ui;
     pterm::PseudoTerm *term;
-    static bool isUnHandleKeysPressed(int key);
     int pip;
-    std::string str, log;
+    std::basic_string<uchar> log;
+    std::string str;//多分0x80以降が紛れ込むことはないので、ucharじゃなくても大丈夫......?
     int offset = 0, row = 0, col = 0;
+
+    void parseEscapeSequence(std::basic_string<uchar> input, unsigned long *index);
 
 protected:
     void keyPressEvent(QKeyEvent* event);
-    void keyPressEvent(int key);
+    void keyPress(int key);
     bool eventFilter(QObject* obj, QEvent* event);
 
 };

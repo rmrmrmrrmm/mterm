@@ -22,6 +22,7 @@ namespace pterm{
             int getPipe();
             bool isPipeExists();
             char *getTname();
+            void setWinSize(winsize ws);
 
         private:
             int amaster;
@@ -31,9 +32,10 @@ namespace pterm{
             char *tname;
             struct ::termios term;
             struct ::winsize tws;
-            const std::string FIFONAME = "/tmp/" + std::to_string(getpid());
+            const std::string FIFONAME = "/tmp/mterm-" + std::to_string(getpid());
 
             int forkPty();
+            void initTermios();
 
             class childptr{
                 private:

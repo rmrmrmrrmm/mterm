@@ -19,6 +19,7 @@ PseudoTerm::PseudoTerm()
 
 PseudoTerm::~PseudoTerm()
 {
+    ::remove(FIFONAME.c_str());
     delete(childp);
 }
 
@@ -53,13 +54,45 @@ bool PseudoTerm::isPipeExists(){
     return stat(FIFONAME.c_str(), &st) == 0;
 }
 
-char *PseudoTerm::getTname(){
+char* PseudoTerm::getTname(){
     return tname;
 }
 
-int PseudoTerm::forkPty(){
+void PseudoTerm::initTermios(){
+    //手元のターミナルと同一の設定 取り急ぎ
+    //term.c_cflag |= ;
+    term.c_iflag |= BRKINT | IGNPAR | ICRNL | IXON | IMAXBEL | IUTF8;
+    term.c_oflag |= OPOST | ONLCR;
+    term.c_lflag |= ISIG | ICANON | IEXTEN | ECHO | ECHOE | ECHOK | ECHOCTL | ECHOKE;
+    term.c_cc[VINTR] = 0x03;
+    term.c_cc[VQUIT] = 0x1c;
+    term.c_cc[VERASE] = 0x7f;
+    term.c_cc[VKILL] = 0x15;
+    term.c_cc[VEOF] = 0x04;
+    //term.c_cc[VEOL] = undef;
+    //term.c_cc[VEOL2] = undef;
+    //term.c_cc[VSWITCH] = undef;
+    term.c_cc[VSTART] = 0x11;
+    term.c_cc[VSTOP] = 0x13;
+    term.c_cc[VSUSP] = 0x1A;
+    term.c_cc[VREPRINT] = 0x12;
+    term.c_cc[VWERASE] = 0x17;
+    term.c_cc[VLNEXT] = 0x16;
+    term.c_cc[VDISCARD] = 0x0f;
+}
 
-    if(::openpty(&amaster, &aslave, tname, nullptr, nullptr) < 0){
+void PseudoTerm::setWinSize(winsize ws){
+    tws.ws_col = ws.ws_col;
+    tws.ws_row = ws.ws_row;
+}
+
+int PseudoTerm::forkPty(){
+    tws.ws_col = 80;
+    tws.ws_row = 24;
+
+    initTermios();
+
+    if(::openpty(&amaster, &aslave, tname, &term, &tws) < 0){
         perror("openpty");
         exit(EXIT_FAILURE);
     }
@@ -86,7 +119,7 @@ int PseudoTerm::forkPty(){
             exit(1);
         case 0:
             int nread;
-            char buf[128];
+            unsigned char buf[128];
             for(;;){
                 if ((nread = ::read(amaster, buf, 127)) <= 0){
                     break;

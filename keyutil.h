@@ -40,13 +40,6 @@ public:
         perror("error at translating QtKeyCode");
         return 0;
     }
-
-    //widgetに処理されてしまうキーたち
-    static bool isRegistered(int key){
-        if(Qt::Key_Home <= key && key <= Qt::Key_PageDown)
-            return true;
-        return false;
-    }
 };
 
 }
