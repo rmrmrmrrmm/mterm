@@ -27,15 +27,16 @@ private:
     pterm::PseudoTerm *term;
     int pip;
     std::basic_string<uchar> log;
-    std::string str;
+    std::string str;//windowBuffer[100];
     int offset = 0, row = 0, col = 0;
-
+    void append(std::basic_string<uchar> input, unsigned long *index);
     void parseEscapeSequence(std::basic_string<uchar> input, unsigned long *index);
 
 protected:
     void keyPressEvent(QKeyEvent* event);
     void keyPress(int key);
     bool eventFilter(QObject* obj, QEvent* event);
+    void paintEvent(QPaintEvent* event);
 
 };
 

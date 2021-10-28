@@ -27,6 +27,9 @@
     </size>
    </property>
    <layout class="QVBoxLayout" name="verticalLayout">
+    <property name="spacing">
+     <number>0</number>
+    </property>
     <property name="leftMargin">
      <number>0</number>
     </property>
@@ -90,12 +93,15 @@
         <property name="bottomMargin">
          <number>0</number>
         </property>
+        <property name="spacing">
+         <number>0</number>
+        </property>
         <item row="0" column="0">
          <widget class="QLabel" name="label">
           <property name="styleSheet">
            <string notr="true">color: rgb(255, 255, 255);
 font: 10pt &quot;DroidSansMono Nerd Font&quot;, &quot;IPA Pゴシック&quot;;
-background-color: rgba(0, 0, 0, 192);</string>
+background-color: rgba(0, 0, 0, 0);</string>
           </property>
           <property name="text">
            <string>TextLabel</string>

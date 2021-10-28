@@ -5,6 +5,7 @@
 #include <QTimer>
 #include <sys/fcntl.h>
 #include <stdio.h>
+#include <QPainter>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -16,8 +17,6 @@ MainWindow::MainWindow(QWidget *parent)
     ui->label->installEventFilter(this);
     ui->scrollArea->installEventFilter(this);
     ui->scrollAreaWidgetContents->installEventFilter(this);
-    str = "";
-    log = new unsigned char();
     QTimer *timer = new QTimer(this);
     connect(timer, &QTimer::timeout, this, QOverload<>::of(&MainWindow::timer));
     timer->start(32);
@@ -53,6 +52,7 @@ void MainWindow::timer(){
         log.append(buffer);
         buf.append(buffer);
     }
+
         for(unsigned long i = 0; i < buf.length(); i++){
             switch(unsigned char c = buf.at(i)) {
             case 0x07:
@@ -82,18 +82,12 @@ void MainWindow::timer(){
                 parseEscapeSequence(buf, &i);
                 continue;
             default:
-                if(offset < 0){
-                    str.replace(str.length() + offset, 1, 1, c);
-                    offset++;
-                } else{
-                    str += c;
-                    col++;
-                }
+                append(buf, &i);
                 continue;
             }
         }
 
-    ui->label->setText(str.c_str());
+    //ui->label->setText(str.c_str());
 }
 
 void MainWindow::parseEscapeSequence(std::basic_string<uchar> input, unsigned long *i){
@@ -263,6 +257,30 @@ void MainWindow::parseEscapeSequence(std::basic_string<uchar> input, unsigned lo
     }
 }
 
+void MainWindow::append(std::basic_string<uchar> input, unsigned long *index){
+    uchar c = input.at(*index);
+    int len = 1;
+    if(0xc0 <= c || c <= 0xdf){
+        len = 2;
+    } else if(0xe0 <= c || c <= 0xef){
+        len = 3;
+    } else if(0xf0 <= c || c <= 0xf7){
+        len = 4;
+    } else if(0xf8 <= c || c <= 0xfb){
+        len = 5;
+    } else if(0xfc <= c || c <= 0xfd){
+        len = 6;
+    }
+
+    if(offset < 0){
+        str.replace(str.length() + offset, 1, 1, c);
+        offset++;
+    } else{
+        str += c;
+        col++;
+    }
+}
+
 void MainWindow::keyPressEvent(QKeyEvent* event){
     int key = event->key();
     std::cout << "  press:" << key << std::endl;
@@ -393,6 +411,30 @@ bool MainWindow::eventFilter(QObject *object, QEvent *event)
         }
     }
     return false;
+}
+
+void MainWindow::paintEvent(QPaintEvent *event){
+    QPainter painter(this);
+    QFont font = painter.font();
+    //fixed pitch を使えば固定長になるらしい
+    font.setPixelSize(16);
+    font.setFixedPitch(true);
+    painter.setFont(font);
+    QFontMetrics metrics = QFontMetrics(font);
+    QString qstr =  QString::fromStdString(str);
+
+    QPoint pt;
+    pt.setX(10);
+    pt.setY(30);
+
+
+    //painter.setPen(QPen(QColor(0, 0, 0, 192), 20, Qt::SolidLine, Qt::RoundCap, Qt::MiterJoin));
+    painter.setBrush(QBrush(QColor(0, 0, 0, 192), Qt::SolidPattern));
+    painter.drawRect(0,0, 800, 600);
+    painter.setPen(QPen(Qt::white, 0, Qt::SolidLine, Qt::RoundCap, Qt::MiterJoin));
+    painter.drawText(QPoint(0, (metrics.height() - metrics.descent())), qstr);
+    painter.drawText(QPoint(0, (metrics.height() - metrics.descent())*2), qstr);
+    painter.drawText(QPoint(0, (metrics.height() - metrics.descent())*3), qstr);
 }
 
 

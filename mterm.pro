@@ -1,4 +1,5 @@
 QT       += core gui
+QT       += quickwidgets
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
@@ -32,3 +33,5 @@ else:unix: LIBS += -L/usr/lib/ -lutil
 
 INCLUDEPATH += /usr/include
 DEPENDPATH += /usr/include
+
+DISTFILES +=
