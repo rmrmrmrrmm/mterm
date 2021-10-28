@@ -61,7 +61,8 @@ void MainWindow::timer(){
             case 0x08:
                 //BS
                 if(i+2 < buf.length() &&  buf.at(i+1) == 0x20 && buf.at(i+2) == 0x08){
-                    str.erase(str.length() - 1 + offset, 1);
+                    windowBuffer[row].erase(windowBuffer[row].length() - 1 + offset);
+                    col--;
                     i+=2;
                 } else{
                     offset -= 1;
@@ -71,7 +72,7 @@ void MainWindow::timer(){
                 //LF
                 row++;
                 col = offset =0;
-                str += c;
+                windowBuffer[row].push(c);
                 continue;
             case 0x0d:
                 //CR
@@ -79,17 +80,19 @@ void MainWindow::timer(){
                 continue;
             case 0x1b:
                 //ESC
-                parseEscapeSequence(buf, &i);
+                //parseEscapeSequence(buf, &i);
                 continue;
             default:
-                append(buf, &i);
+                append(buf, i);
                 continue;
             }
         }
 
     //ui->label->setText(str.c_str());
+    update();
 }
 
+/*
 void MainWindow::parseEscapeSequence(std::basic_string<uchar> input, unsigned long *i){
     //input ends with ESC
     if(*i + 1 > input.length()){
@@ -256,27 +259,14 @@ void MainWindow::parseEscapeSequence(std::basic_string<uchar> input, unsigned lo
     return;
     }
 }
+*/
 
-void MainWindow::append(std::basic_string<uchar> input, unsigned long *index){
-    uchar c = input.at(*index);
-    int len = 1;
-    if(0xc0 <= c || c <= 0xdf){
-        len = 2;
-    } else if(0xe0 <= c || c <= 0xef){
-        len = 3;
-    } else if(0xf0 <= c || c <= 0xf7){
-        len = 4;
-    } else if(0xf8 <= c || c <= 0xfb){
-        len = 5;
-    } else if(0xfc <= c || c <= 0xfd){
-        len = 6;
-    }
-
+void MainWindow::append(std::basic_string<uchar> input, unsigned long index){
     if(offset < 0){
-        str.replace(str.length() + offset, 1, 1, c);
+        windowBuffer[row].insert(col + offset, input.at(index));
         offset++;
     } else{
-        str += c;
+        windowBuffer[row].push(input.at(index));
         col++;
     }
 }
@@ -421,7 +411,6 @@ void MainWindow::paintEvent(QPaintEvent *event){
     font.setFixedPitch(true);
     painter.setFont(font);
     QFontMetrics metrics = QFontMetrics(font);
-    QString qstr =  QString::fromStdString(str);
 
     QPoint pt;
     pt.setX(10);
@@ -432,9 +421,13 @@ void MainWindow::paintEvent(QPaintEvent *event){
     painter.setBrush(QBrush(QColor(0, 0, 0, 192), Qt::SolidPattern));
     painter.drawRect(0,0, 800, 600);
     painter.setPen(QPen(Qt::white, 0, Qt::SolidLine, Qt::RoundCap, Qt::MiterJoin));
-    painter.drawText(QPoint(0, (metrics.height() - metrics.descent())), qstr);
-    painter.drawText(QPoint(0, (metrics.height() - metrics.descent())*2), qstr);
-    painter.drawText(QPoint(0, (metrics.height() - metrics.descent())*3), qstr);
+
+
+    QString qstr;
+    for(int i = 0; i <= row; i++){
+        qstr =  windowBuffer[i].q_str();
+        painter.drawText(QPoint(0, (metrics.height() - metrics.descent()) * (i+1)), qstr);
+    }
 }
 
 

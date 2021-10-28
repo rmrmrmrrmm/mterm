@@ -16,6 +16,7 @@ SOURCES += \
 HEADERS += \
     keyutil.h \
     mainwindow.h \
+    mstring.h \
     pseudoterm.h
 
 FORMS += \

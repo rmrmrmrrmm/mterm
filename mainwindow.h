@@ -4,6 +4,7 @@
 #include <QMainWindow>
 #include <QKeyEvent>
 #include "pseudoterm.h"
+#include "mstring.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -27,9 +28,9 @@ private:
     pterm::PseudoTerm *term;
     int pip;
     std::basic_string<uchar> log;
-    std::string str;//windowBuffer[100];
-    int offset = 0, row = 0, col = 0;
-    void append(std::basic_string<uchar> input, unsigned long *index);
+    pterm::mstring windowBuffer[100];
+    int offset = 0, row = 0, col = 0, WINDOWBUFFER_MAX = 100, winWidth = 80, winHeight = 30;
+    void append(std::basic_string<uchar> input, unsigned long index);
     void parseEscapeSequence(std::basic_string<uchar> input, unsigned long *index);
 
 protected:
