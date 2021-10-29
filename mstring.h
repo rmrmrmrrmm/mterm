@@ -21,10 +21,14 @@ public:
     }
 
     int length(){
-        return length(str);
+        return str.length();
     }
 
-    static int length(std::basic_string<uchar> str){
+    int letterLength(){
+        return letterLength(str);
+    }
+
+    static int letterLength(std::basic_string<uchar> str){
         int l = 0;
         for(unsigned long i = 0; i < str.length(); i++){
             unsigned char c = str.at(i);
@@ -54,7 +58,7 @@ public:
             if (c >= 0x80 && c <= 0xBF) {
             }else{
                 l ++;
-                if(l == pos){
+                if(l == pos + 1){
                     int m = 1;
                     for(unsigned long j = i + 1; j < str.length(); j++){
                         c = this->str.at(i);
@@ -76,7 +80,7 @@ public:
             if (c >= 0x80 && c <= 0xBF) {
             }else{
                 l ++;
-                if(l == pos){
+                if(l == pos + 1){
                     for(; i < this->str.length(); i++){
                         c = this->str.at(i);
                         if (!(c >= 0x80 && c <= 0xBF)) {
@@ -97,7 +101,7 @@ public:
             if (uc >= 0x80 && uc <= 0xBF) {
             }else{
                 l ++;
-                if(l == pos){
+                if(l == pos + 1){
                     for(; i < this->str.length(); i++){
                         uc = this->str.at(i);
                         if (!(uc >= 0x80 && uc <= 0xBF)) {
@@ -111,10 +115,20 @@ public:
         }
     }
 
-    void replace(int pos, int length, const std::basic_string<uchar> &str){
-        for(int i = 0; i < length; i++)
-            this->str.erase(pos + i);
-        this->str.insert(pos, str);
+    void replace(int pos, const std::basic_string<uchar> &str, unsigned long *index){
+        std::basic_string<uchar> s;
+        s += str.at(*index);
+        for(; *index + 1 < str.length(); *index += 1){
+            uchar c = str.at(*index + 1);
+            if (c >= 0x80 && c <= 0xBF) {
+                s += c;
+            } else {
+                break;
+            }
+        }
+
+        this->erase(pos);
+        this->insert(pos, s);
     }
 
     void push(uchar c){
@@ -123,6 +137,21 @@ public:
 
     void push(std::basic_string<uchar> s){
         str += s;
+    }
+
+    void push(std::basic_string<uchar> &str, unsigned long *index){
+        std::basic_string<uchar> s;
+        s += str.at(*index);
+        for(; str.length() + 1 < *index; *index += 1){
+            uchar c = str.at(*index + 1);
+            if (c >= 0x80 && c <= 0xBF) {
+                s += c;
+            } else {
+                break;
+            }
+        }
+
+        this->str += s;
     }
 
 private:

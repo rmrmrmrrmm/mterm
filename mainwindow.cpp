@@ -61,8 +61,7 @@ void MainWindow::timer(){
             case 0x08:
                 //BS
                 if(i+2 < buf.length() &&  buf.at(i+1) == 0x20 && buf.at(i+2) == 0x08){
-                    windowBuffer[row].erase(windowBuffer[row].length() - 1 + offset);
-                    col--;
+                    windowBuffer[row].erase(windowBuffer[row].letterLength() - 1 + offset);
                     i+=2;
                 } else{
                     offset -= 1;
@@ -83,7 +82,7 @@ void MainWindow::timer(){
                 //parseEscapeSequence(buf, &i);
                 continue;
             default:
-                append(buf, i);
+                append(buf, &i);
                 continue;
             }
         }
@@ -261,12 +260,12 @@ void MainWindow::parseEscapeSequence(std::basic_string<uchar> input, unsigned lo
 }
 */
 
-void MainWindow::append(std::basic_string<uchar> input, unsigned long index){
+void MainWindow::append(std::basic_string<uchar> input, unsigned long *index){
     if(offset < 0){
-        windowBuffer[row].insert(col + offset, input.at(index));
+        windowBuffer[row].replace(col + offset, input, index);
         offset++;
     } else{
-        windowBuffer[row].push(input.at(index));
+        windowBuffer[row].push(input, index);
         col++;
     }
 }
@@ -316,6 +315,8 @@ void MainWindow::keyPressEvent(QKeyEvent* event){
     }
 
     if(key == Qt::Key_Delete){
+        //ctrl+dだと空欄時にexitしてしまう
+        //xtermの挙動(bell)とは異なる
         this->keyPress(0x04);
         return;
     }
