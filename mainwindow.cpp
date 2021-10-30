@@ -54,6 +54,7 @@ void MainWindow::timer(){
             switch(unsigned char c = buf.at(i)) {
             case 0x07:
                 //ring a bell
+                bell = BELL;
                 continue;
             case 0x08:
                 //BS
@@ -409,21 +410,23 @@ void MainWindow::paintEvent(QPaintEvent *event){
     painter.setFont(font);
     QFontMetrics metrics = QFontMetrics(font);
 
-    QPoint pt;
-    pt.setX(10);
-    pt.setY(30);
+    if(bell <= 0){
+        //painter.setPen(QPen(QColor(0, 0, 0, 192), 20, Qt::SolidLine, Qt::RoundCap, Qt::MiterJoin));
+        painter.setBrush(QBrush(QColor(0, 0, 0, 192), Qt::SolidPattern));
+        painter.drawRect(0,0, 800, 600);
+        painter.setPen(QPen(Qt::white, 0, Qt::SolidLine, Qt::RoundCap, Qt::MiterJoin));
+        painter.drawLine((col + offset) * 8, row * 16, (col + offset) * 8, (row + 1) * 16);
 
 
-    //painter.setPen(QPen(QColor(0, 0, 0, 192), 20, Qt::SolidLine, Qt::RoundCap, Qt::MiterJoin));
-    painter.setBrush(QBrush(QColor(0, 0, 0, 192), Qt::SolidPattern));
-    painter.drawRect(0,0, 800, 600);
-    painter.setPen(QPen(Qt::white, 0, Qt::SolidLine, Qt::RoundCap, Qt::MiterJoin));
-
-
-    QString qstr;
-    for(int i = 0; i <= row; i++){
-        qstr =  windowBuffer[i].q_str();
-        painter.drawText(QPoint(0, (metrics.height() - metrics.descent()) * (i+1)), qstr);
+        QString qstr;
+        for(int i = 0; i <= row; i++){
+            qstr =  windowBuffer[i].q_str();
+            painter.drawText(QPoint(0, (metrics.height() - metrics.descent()) * (i+1)), qstr);
+        }
+    } else{
+        painter.setBrush(QBrush(QColor(0, 0, 0, 255), Qt::SolidPattern));
+        painter.drawRect(0, 0, 800, 600);
+        bell--;
     }
 }
 
