@@ -28,8 +28,8 @@ private:
     pterm::PseudoTerm *term;
     int pip;
     std::basic_string<uchar> log;
-    pterm::mstring windowBuffer[100];
-    int offset = 0, row = 0, col = 0, WINDOWBUFFER_MAX = 100, winWidth = 80, winHeight = 30;
+    pterm::mstring windowBuffer[1000];
+    int offset = 0, row = 0, col = 0, WINDOWBUFFER_MAX = 1000, winWidth = 80, winHeight = 30;
     void append(std::basic_string<uchar> input, unsigned long *index);
     void parseEscapeSequence(std::basic_string<uchar> input, unsigned long *index);
 

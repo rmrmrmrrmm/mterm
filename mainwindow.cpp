@@ -14,9 +14,6 @@ MainWindow::MainWindow(QWidget *parent)
     this->setAttribute(Qt::WA_TranslucentBackground, true);
     ui->setupUi(this);
     ui->centralwidget->installEventFilter(this);
-    ui->label->installEventFilter(this);
-    ui->scrollArea->installEventFilter(this);
-    ui->scrollAreaWidgetContents->installEventFilter(this);
     QTimer *timer = new QTimer(this);
     connect(timer, &QTimer::timeout, this, QOverload<>::of(&MainWindow::timer));
     timer->start(32);
@@ -75,7 +72,7 @@ void MainWindow::timer(){
                 continue;
             case 0x0d:
                 //CR
-                offset = -col;
+                offset = - col;
                 continue;
             case 0x1b:
                 //ESC
@@ -86,8 +83,6 @@ void MainWindow::timer(){
                 continue;
             }
         }
-
-    //ui->label->setText(str.c_str());
     update();
 }
 
@@ -407,6 +402,7 @@ bool MainWindow::eventFilter(QObject *object, QEvent *event)
 void MainWindow::paintEvent(QPaintEvent *event){
     QPainter painter(this);
     QFont font = painter.font();
+    font.setFamily("Segoe UI");
     //fixed pitch を使えば固定長になるらしい
     font.setPixelSize(16);
     font.setFixedPitch(true);

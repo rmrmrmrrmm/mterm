@@ -75,7 +75,8 @@ public:
 
     void insert(int pos, const std::basic_string<uchar> &str){
         int l = 0;
-        for(unsigned long i = 0; i < this->str.length(); i++){
+        unsigned long i = 0;
+        for(; i < this->str.length(); i++){
             unsigned char c = this->str.at(i);
             if (c >= 0x80 && c <= 0xBF) {
             }else{
@@ -87,16 +88,18 @@ public:
                             break;
                         }
                     }
-                    this->str.insert(i, str);
+                    break;
                 }
 
             }
         }
+        this->str.insert(i, str);
     }
 
     void insert(int pos, uchar c){
         int l = 0;
-        for(unsigned long i = 0; i < this->str.length(); i++){
+        unsigned long i = 0;
+        for(; i < this->str.length(); i++){
             unsigned char uc = this->str.at(i);
             if (uc >= 0x80 && uc <= 0xBF) {
             }else{
@@ -108,11 +111,12 @@ public:
                             break;
                         }
                     }
-                    this->str.insert(i, 1, c);
+                    break;
                 }
 
             }
         }
+        this->str.insert(i, 1, c);
     }
 
     void replace(int pos, const std::basic_string<uchar> &str, unsigned long *index){
@@ -142,7 +146,7 @@ public:
     void push(std::basic_string<uchar> &str, unsigned long *index){
         std::basic_string<uchar> s;
         s += str.at(*index);
-        for(; str.length() + 1 < *index; *index += 1){
+        for(; *index + 1 < str.length(); *index += 1){
             uchar c = str.at(*index + 1);
             if (c >= 0x80 && c <= 0xBF) {
                 s += c;
