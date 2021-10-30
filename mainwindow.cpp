@@ -59,21 +59,20 @@ void MainWindow::timer(){
             case 0x08:
                 //BS
                 if(i+2 < buf.length() &&  buf.at(i+1) == 0x20 && buf.at(i+2) == 0x08){
-                    windowBuffer[row].erase(windowBuffer[row].letterLength() - 1 + offset);
+                    windowBuffer.getCurrent()->erase(windowBuffer.getCurrent()->letterLength() - 1 + windowBuffer.getOffset());
                     i+=2;
                 } else{
-                    offset -= 1;
+                    windowBuffer.offsetBack();
                 }
                 continue;
             case 0x0a:
                 //LF
-                row++;
-                col = offset =0;
-                windowBuffer[row].push(c);
+                windowBuffer.LF();
+                //windowBuffer.getCurrent()->push(c);
                 continue;
             case 0x0d:
                 //CR
-                offset = - col;
+                windowBuffer.CR();
                 continue;
             case 0x1b:
                 //ESC
@@ -257,12 +256,12 @@ void MainWindow::parseEscapeSequence(std::basic_string<uchar> input, unsigned lo
 */
 
 void MainWindow::append(std::basic_string<uchar> input, unsigned long *index){
-    if(offset < 0){
-        windowBuffer[row].replace(col + offset, input, index);
-        offset++;
+    if(windowBuffer.getOffset() < 0){
+        windowBuffer.getCurrent()->replace(windowBuffer.getCursorX(), input, index);
+        windowBuffer.offsetFront();
     } else{
-        windowBuffer[row].push(input, index);
-        col++;
+        windowBuffer.getCurrent()->push(input, index);
+        windowBuffer.incCol();
     }
 }
 
@@ -380,11 +379,11 @@ void MainWindow::keyPressEvent(QKeyEvent* event){
 }
 
 void MainWindow::keyPress(int key){
-    std::cout << "  resolve:" << key << std::endl;
+    //std::cout << "  resolve:" << key << std::endl;
     term->keyPressed(key);
 }
 
-bool MainWindow::eventFilter(QObject *object, QEvent *event)
+bool MainWindow::eventFilter(QObject *, QEvent *event)
 {
     if (event->type() == QEvent::KeyPress) {
         QKeyEvent *keyEvent = static_cast<QKeyEvent *>(event);
@@ -400,7 +399,7 @@ bool MainWindow::eventFilter(QObject *object, QEvent *event)
     return false;
 }
 
-void MainWindow::paintEvent(QPaintEvent *event){
+void MainWindow::paintEvent(QPaintEvent *){
     QPainter painter(this);
     QFont font = painter.font();
     font.setFamily("Segoe UI");
@@ -415,12 +414,12 @@ void MainWindow::paintEvent(QPaintEvent *event){
         painter.setBrush(QBrush(QColor(0, 0, 0, 192), Qt::SolidPattern));
         painter.drawRect(0,0, 800, 600);
         painter.setPen(QPen(Qt::white, 0, Qt::SolidLine, Qt::RoundCap, Qt::MiterJoin));
-        painter.drawLine((col + offset) * 8, row * 16, (col + offset) * 8, (row + 1) * 16);
+        painter.drawLine((windowBuffer.getCursorX()) * 8, windowBuffer.getCursorY() * 16, (windowBuffer.getCursorX()) * 8, (windowBuffer.getCursorY() + 1) * 16);
 
 
         QString qstr;
-        for(int i = 0; i <= row; i++){
-            qstr =  windowBuffer[i].q_str();
+        for(int i = 0; i <= windowBuffer.getRow(); i++){
+            qstr =  windowBuffer.at(i)->q_str();
             painter.drawText(QPoint(0, (metrics.height() - metrics.descent()) * (i+1)), qstr);
         }
     } else{

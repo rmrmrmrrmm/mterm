@@ -11,13 +11,15 @@ CONFIG += c++11
 SOURCES += \
     main.cpp \
     mainwindow.cpp \
-    pseudoterm.cpp
+    pseudoterm.cpp \
+    windowbuffer.cpp
 
 HEADERS += \
     keyutil.h \
     mainwindow.h \
     mstring.h \
-    pseudoterm.h
+    pseudoterm.h \
+    windowbuffer.h
 
 FORMS += \
     mainwindow.ui
