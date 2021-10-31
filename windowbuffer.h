@@ -172,7 +172,6 @@ public:
     }
     void popBack(){
         getCurrent()->erase(getCurrent()->letterLength() - 1 + getOffset());
-        decCol();
     }
 
     void append(std::basic_string<uchar> input, unsigned long *index){
