@@ -65,9 +65,11 @@ public:
                 if(l == pos + 1){
                     int m = 1;
                     for(unsigned long j = i + 1; j < str.length(); j++){
-                        c = this->str.at(i);
+                        c = this->str.at(j);
                         if (c >= 0x80 && c <= 0xBF) {
                             m++;
+                        } else{
+                            break;
                         }
                     }
                     str.erase(i, m);
