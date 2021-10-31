@@ -51,6 +51,10 @@ public:
         return str.length();
     }
 
+    void clear(){
+        str.clear();
+    }
+
     void erase(int pos){
         int l = 0;
         for(unsigned long i = 0; i < str.length(); i++){

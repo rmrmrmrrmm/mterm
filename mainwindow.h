@@ -35,13 +35,13 @@ private:
     //windowTopRow = 0;
     char BELL = 3;
     char bell = 0;
-    void append(std::basic_string<uchar> input, unsigned long *index);
     void parseEscapeSequence(std::basic_string<uchar> input, unsigned long *index);
     void keyPress(int key);
 
 protected:
     void keyPressEvent(QKeyEvent* event);
     bool eventFilter(QObject*, QEvent* event);
+    void wheelEvent(QWheelEvent *event);
     void paintEvent(QPaintEvent*);
 
 };

@@ -6,6 +6,8 @@
 #include <sys/fcntl.h>
 #include <stdio.h>
 #include <QPainter>
+#include <QVector>
+#include <QWheelEvent>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -51,15 +53,15 @@ void MainWindow::timer(){
     }
 
         for(unsigned long i = 0; i < buf.length(); i++){
-            switch(unsigned char c = buf.at(i)) {
+            switch(buf.at(i)) {
             case 0x07:
                 //ring a bell
-                bell = BELL;
+                windowBuffer.setBell();
                 continue;
             case 0x08:
                 //BS
                 if(i+2 < buf.length() &&  buf.at(i+1) == 0x20 && buf.at(i+2) == 0x08){
-                    windowBuffer.getCurrent()->erase(windowBuffer.getCurrent()->letterLength() - 1 + windowBuffer.getOffset());
+                    windowBuffer.popBack();
                     i+=2;
                 } else{
                     windowBuffer.offsetBack();
@@ -68,7 +70,6 @@ void MainWindow::timer(){
             case 0x0a:
                 //LF
                 windowBuffer.LF();
-                //windowBuffer.getCurrent()->push(c);
                 continue;
             case 0x0d:
                 //CR
@@ -76,10 +77,11 @@ void MainWindow::timer(){
                 continue;
             case 0x1b:
                 //ESC
+                windowBuffer.clearWindow();
                 //parseEscapeSequence(buf, &i);
                 continue;
             default:
-                append(buf, &i);
+                windowBuffer.append(buf, &i);
                 continue;
             }
         }
@@ -255,16 +257,6 @@ void MainWindow::parseEscapeSequence(std::basic_string<uchar> input, unsigned lo
 }
 */
 
-void MainWindow::append(std::basic_string<uchar> input, unsigned long *index){
-    if(windowBuffer.getOffset() < 0){
-        windowBuffer.getCurrent()->replace(windowBuffer.getCursorX(), input, index);
-        windowBuffer.offsetFront();
-    } else{
-        windowBuffer.getCurrent()->push(input, index);
-        windowBuffer.incCol();
-    }
-}
-
 void MainWindow::keyPressEvent(QKeyEvent* event){
     int key = event->key();
     std::cout << "  press:" << key << std::endl;
@@ -356,6 +348,16 @@ void MainWindow::keyPressEvent(QKeyEvent* event){
         return;
     }
 
+    if(key == Qt::Key_PageUp){
+        windowBuffer.decTopRow(20);
+        return;
+    }
+
+    if(key == Qt::Key_PageDown){
+        windowBuffer.incTopRow(20);
+        return;
+    }
+
     //modifier
     if(key == Qt::Key_Control){
         return;
@@ -399,33 +401,46 @@ bool MainWindow::eventFilter(QObject *, QEvent *event)
     return false;
 }
 
+void MainWindow::wheelEvent(QWheelEvent *event){
+    QPoint numDegrees = event->angleDelta() / 120;
+    if(numDegrees.y() < 0){
+        windowBuffer.incTopRow();
+    } else if(numDegrees.y() > 0){
+        windowBuffer.decTopRow();
+    }
+    event->accept();
+}
+
 void MainWindow::paintEvent(QPaintEvent *){
     QPainter painter(this);
     QFont font = painter.font();
     font.setFamily("Segoe UI");
-    //fixed pitch を使えば固定長になるらしい
     font.setPixelSize(16);
     font.setFixedPitch(true);
     painter.setFont(font);
     QFontMetrics metrics = QFontMetrics(font);
 
-    if(bell <= 0){
-        //painter.setPen(QPen(QColor(0, 0, 0, 192), 20, Qt::SolidLine, Qt::RoundCap, Qt::MiterJoin));
+    if(windowBuffer.isBell()){
+        painter.setBrush(QBrush(QColor(0, 0, 0, 255), Qt::SolidPattern));
+        painter.drawRect(0, 0, 800, 600);
+    } else{
         painter.setBrush(QBrush(QColor(0, 0, 0, 192), Qt::SolidPattern));
         painter.drawRect(0,0, 800, 600);
         painter.setPen(QPen(Qt::white, 0, Qt::SolidLine, Qt::RoundCap, Qt::MiterJoin));
-        painter.drawLine((windowBuffer.getCursorX()) * 8, windowBuffer.getCursorY() * 16, (windowBuffer.getCursorX()) * 8, (windowBuffer.getCursorY() + 1) * 16);
+        painter.drawLine((windowBuffer.getCursorX()) * 8, windowBuffer.getCursorY() * 15, (windowBuffer.getCursorX()) * 8, (windowBuffer.getCursorY() + 1) * 15);
 
-
+        int displayCol = 0;
+        for(QString qstr : windowBuffer.print()){
+            painter.drawText(QPoint(0, (metrics.height() - metrics.descent()) * (displayCol+1)), qstr);
+            displayCol++;
+        }
+        /*
         QString qstr;
         for(int i = 0; i <= windowBuffer.getRow(); i++){
             qstr =  windowBuffer.at(i)->q_str();
             painter.drawText(QPoint(0, (metrics.height() - metrics.descent()) * (i+1)), qstr);
         }
-    } else{
-        painter.setBrush(QBrush(QColor(0, 0, 0, 255), Qt::SolidPattern));
-        painter.drawRect(0, 0, 800, 600);
-        bell--;
+        */
     }
 }
 
