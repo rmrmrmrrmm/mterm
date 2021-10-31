@@ -11,8 +11,7 @@ CONFIG += c++11
 SOURCES += \
     main.cpp \
     mainwindow.cpp \
-    pseudoterm.cpp \
-    windowbuffer.cpp
+    pseudoterm.cpp
 
 HEADERS += \
     keyutil.h \

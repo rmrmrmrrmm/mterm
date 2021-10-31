@@ -162,6 +162,13 @@ public:
         this->str += s;
     }
 
+    void resize(int n, char c){
+        str.resize(n, c);
+    }
+    void resize(int n){
+        str.resize(n);
+    }
+
 private:
     std::basic_string<uchar> str;
 };

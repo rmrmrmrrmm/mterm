@@ -15,6 +15,13 @@ MainWindow::MainWindow(QWidget *parent)
 {
     this->setAttribute(Qt::WA_TranslucentBackground, true);
     ui->setupUi(this);
+    this->setGeometry(30, 30, 8*80, 15*30 + 1);
+    this->setBaseSize(8*80, 15*30 + 1);
+
+    this->setSizeIncrement(8, 15);
+    ui->centralwidget->setSizeIncrement(8, 15);
+    ui->menubar->setSizeIncrement(8, 15);
+
     ui->centralwidget->installEventFilter(this);
     QTimer *timer = new QTimer(this);
     connect(timer, &QTimer::timeout, this, QOverload<>::of(&MainWindow::timer));
@@ -23,6 +30,8 @@ MainWindow::MainWindow(QWidget *parent)
 
 MainWindow::~MainWindow()
 {
+
+    std::cout << log.c_str() << std::endl;
     delete term;
     delete ui;
 }
@@ -77,8 +86,7 @@ void MainWindow::timer(){
                 continue;
             case 0x1b:
                 //ESC
-                windowBuffer.clearWindow();
-                //parseEscapeSequence(buf, &i);
+                parseEscapeSequence(buf, &i);
                 continue;
             default:
                 windowBuffer.append(buf, &i);
@@ -88,17 +96,11 @@ void MainWindow::timer(){
     update();
 }
 
-/*
 void MainWindow::parseEscapeSequence(std::basic_string<uchar> input, unsigned long *i){
     //input ends with ESC
     if(*i + 1 > input.length()){
-        if(offset < 0){
-            str.replace(str.length() + offset, 1, 1, input.at(*i));
-            offset++;
-        } else{
-            str += input.at(*i);
-            col++;
-        }
+        windowBuffer.append(input, i);
+        return;
     }
 
     //
@@ -112,7 +114,7 @@ void MainWindow::parseEscapeSequence(std::basic_string<uchar> input, unsigned lo
     case 'p':
        //Device Control String
     return;
-    case 0x5c:
+    case '\\':
        //String Terminator
     return;
     case ']':
@@ -131,20 +133,15 @@ void MainWindow::parseEscapeSequence(std::basic_string<uchar> input, unsigned lo
     case '[':
         //very zatu statement
         if(*i + 1 > input.length()){
-            if(offset < 0){
-                str.replace(str.length() + offset, 1, 1, 0x07);
-                offset++;
-            } else{
-                str += 0x07;
-                col++;
-            }
+            windowBuffer.setBell();
             return;
         }else{
             int arg1;
             unsigned char tmp;
-            for(arg1 = 0; *i + 1 > input.length();){
+            for(arg1 = 0; *i + 1 < input.length();){
                 tmp = input.at(*i += 1);
                 if(tmp >= 0x30 && tmp <= 0x39){
+                    arg1 *= 10;
                     arg1 += tmp - 0x30;
                 } else{
                     break;
@@ -158,7 +155,13 @@ void MainWindow::parseEscapeSequence(std::basic_string<uchar> input, unsigned lo
                 //cursor down
                 return;
             case 'C':
-                //cursor f
+                if(windowBuffer.getOffset() < 0){
+                    arg1 += windowBuffer.getOffset();
+                    windowBuffer.setOffset(arg1 >= 0 ? 0 : arg1);
+                }
+                if(arg1 > 0){
+                    windowBuffer.incCol(arg1);
+                }
                 return;
             case 'D':
                 //cursor b
@@ -173,11 +176,22 @@ void MainWindow::parseEscapeSequence(std::basic_string<uchar> input, unsigned lo
                 //Moves the cursor to column n (default 1).
                 //資料少なくてよくわからなかった
                 return;
+            case 'H':
+                //Cursor Position
+                windowBuffer.setCursor(0, 0);
+                return;
             case 'J':
                 //Erase in Display
+                windowBuffer.clearWindow();
                 return;
             case 'K':
                 //Erase in Line
+                switch(arg1){
+                case 0:
+                    windowBuffer.clear(windowBuffer.getCursorY());
+                    return;
+                }
+
                 return;
             case 'S':
                 //Scroll Up
@@ -192,20 +206,15 @@ void MainWindow::parseEscapeSequence(std::basic_string<uchar> input, unsigned lo
                 return;
             case ';':
                 if(*i + 1 > input.length()){
-                    if(offset < 0){
-                        str.replace(str.length() + offset, 1, 1, 0x07);
-                        offset++;
-                    } else{
-                        str += 0x07;
-                        col++;
-                    }
+                    windowBuffer.setBell();
                     return;
                 }else{
                     int arg2;
                     unsigned char tmp2;
-                    for(arg2 = 0; *i + 1 > input.length();){
+                    for(arg2 = 0; *i + 1 < input.length();){
                         tmp2 = input.at(*i += 1);
                         if(tmp2 >= 0x30 && tmp2 <= 0x39){
+                            arg2 *= 10;
                             arg2 += tmp2 - 0x30;
                         } else{
                             break;
@@ -214,30 +223,19 @@ void MainWindow::parseEscapeSequence(std::basic_string<uchar> input, unsigned lo
                     switch(tmp2){
                     case 'H':
                         //Cursor Position
+                        windowBuffer.setCursor(arg2 - 1, arg1 - 1);
                         return;
                     case 'f':
                         //Horizontal Vertical Position
                         return;
                     default:
-                        if(offset < 0){
-                            str.replace(str.length() + offset, 1, 1, 0x07);
-                            offset++;
-                        } else{
-                            str += 0x07;
-                            col++;
-                        }
+                        windowBuffer.setBell();
                         return;
                     }
                 }
                 return;
             default:
-                if(offset < 0){
-                    str.replace(str.length() + offset, 1, 1, 0x07);
-                    offset++;
-                } else{
-                    str += 0x07;
-                    col++;
-                }
+                windowBuffer.setBell();
                 return;
             }
         }
@@ -245,21 +243,14 @@ void MainWindow::parseEscapeSequence(std::basic_string<uchar> input, unsigned lo
 
     default:
        //Single Shift Two
-        if(offset < 0){
-            str.replace(str.length() + offset, 1, 1, 0x07);
-            offset++;
-        } else{
-            str += 0x07;
-            col++;
-        }
+        windowBuffer.setBell();
     return;
     }
 }
-*/
 
 void MainWindow::keyPressEvent(QKeyEvent* event){
     int key = event->key();
-    std::cout << "  press:" << key << std::endl;
+    //std::cout << "  press:" << key << std::endl;
 
     if(QApplication::queryKeyboardModifiers() & Qt::ControlModifier){
         if(key >= Qt::Key_At && key <= Qt::Key_Underscore){
@@ -420,6 +411,8 @@ void MainWindow::paintEvent(QPaintEvent *){
     painter.setFont(font);
     QFontMetrics metrics = QFontMetrics(font);
 
+    //this->setGeometry(0, 0, this->width() - (this->width() & 8), this->height() - (this->height() & 8) + 1);
+
     if(windowBuffer.isBell()){
         painter.setBrush(QBrush(QColor(0, 0, 0, 255), Qt::SolidPattern));
         painter.drawRect(0, 0, 800, 600);
@@ -427,20 +420,14 @@ void MainWindow::paintEvent(QPaintEvent *){
         painter.setBrush(QBrush(QColor(0, 0, 0, 192), Qt::SolidPattern));
         painter.drawRect(0,0, 800, 600);
         painter.setPen(QPen(Qt::white, 0, Qt::SolidLine, Qt::RoundCap, Qt::MiterJoin));
-        painter.drawLine((windowBuffer.getCursorX()) * 8, windowBuffer.getCursorY() * 15, (windowBuffer.getCursorX()) * 8, (windowBuffer.getCursorY() + 1) * 15);
 
         int displayCol = 0;
-        for(QString qstr : windowBuffer.print()){
-            painter.drawText(QPoint(0, (metrics.height() - metrics.descent()) * (displayCol+1)), qstr);
+        QVector<QString> qvec = windowBuffer.print();
+        for(int i = 0; i < qvec.length(); i++){
+            painter.drawText(QPoint(0, (metrics.height() - metrics.descent()) * (displayCol+1)), qvec[i]);
             displayCol++;
         }
-        /*
-        QString qstr;
-        for(int i = 0; i <= windowBuffer.getRow(); i++){
-            qstr =  windowBuffer.at(i)->q_str();
-            painter.drawText(QPoint(0, (metrics.height() - metrics.descent()) * (i+1)), qstr);
-        }
-        */
+        painter.drawLine((windowBuffer.getCursorX()) * 8, windowBuffer.getRenderCursorY() * 15, (windowBuffer.getCursorX()) * 8, (windowBuffer.getRenderCursorY() + 1) * 15);
     }
 }
 
