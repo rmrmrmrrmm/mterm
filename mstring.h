@@ -55,6 +55,21 @@ public:
         str.clear();
     }
 
+    void  clear(unsigned long to){
+        unsigned long num = 0;
+        for(unsigned long i = 0; i < str.length(); i++){
+            uchar c = str.at(i);
+            if (c >= 0x80 && c <= 0xBF) {
+            } else {
+                num++;
+                if(num > to){
+                    str.replace(0, i, to, ' ');
+                }
+            }
+        }
+        clear();
+    }
+
     void erase(int pos){
         int l = 0;
         for(unsigned long i = 0; i < str.length(); i++){

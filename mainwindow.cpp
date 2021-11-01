@@ -188,6 +188,12 @@ void MainWindow::parseEscapeSequence(std::basic_string<uchar> input, unsigned lo
                 //Erase in Line
                 switch(arg1){
                 case 0:
+                    windowBuffer.getCurrent()->resize(windowBuffer.getCursorX());
+                    return;
+                case 1:
+                    windowBuffer.getCurrent()->clear(windowBuffer.getCursorX());
+                    return;
+                case 2:
                     windowBuffer.clear(windowBuffer.getCursorY());
                     return;
                 }
